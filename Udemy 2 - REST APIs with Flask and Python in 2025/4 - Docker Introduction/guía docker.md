@@ -20,3 +20,6 @@ Para recrear:
 
 Correr archivos específicos y que se vayan sobreescribiendo según cambios en los archivos de adelante:  
 ```docker compose -f docker-compose.yml -f docker-compose.debug.yml up```
+
+Si quieres correr comandos adentro del servicio  
+`docker compose exec <nombre-servicio> <comando>`

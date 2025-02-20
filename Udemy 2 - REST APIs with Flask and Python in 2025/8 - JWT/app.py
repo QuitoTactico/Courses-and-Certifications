@@ -18,6 +18,7 @@ import os
 
 from flask import Flask
 from flask_smorest import Api
+from flask_jwt_extended import JWTManager
 
 from db import db
 import models
@@ -48,6 +49,10 @@ def create_app(db_url=None):
     db.init_app(app)
 
     api = Api(app)
+
+    # no muy seguro, puedes cambiar "jose" por str(secrets.SystemRandom().getrandbits(128))
+    app.config["JWT_SECRET_KEY"] = "jose"
+    jwt = JWTManager(app)
 
     # DEPRECATED
     # @app.before_first_request

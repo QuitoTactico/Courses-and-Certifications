@@ -1,3 +1,14 @@
+# Respuesta corta:
+
+(as daemon):   `docker run -dp <external-port>:<internal.port> -w //app -v "$(Get-Location)://app" <image-name>`
+(in terminal): `docker run -p <external-port>:<internal-port> -w //app -v "$(Get-Location)://app" <image-name>`
+(to see id):   `docker container ls`
+(to kill):     `docker container kill <container-id>`
+
+> Si no te da, lee abajo avr cuál te sirve.
+
+---
+
 La idea es que el volumen del container (su almacenamiento) no sea el default de él mismo, sino que sea un mapeo del local nuestro. Y le dijimos a nuestro flask que se autoactualizara.
 
 # MAC/Linux Command:

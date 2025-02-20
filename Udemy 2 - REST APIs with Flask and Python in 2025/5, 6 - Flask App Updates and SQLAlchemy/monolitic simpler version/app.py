@@ -1,9 +1,12 @@
 # Run:
-# flask run   (open)
-# ctrl+C      (close)
+# (to open) flask run
+# (close)   ctrl+C
 
 # Run continuously with docker:
-# docker run -dp 5000:5000 -w //app -v "$(Get-Location)://app" flask-smorest-api
+# (as daemon)   docker run -dp 5000:5000 -w //app -v "$(Get-Location)://app" flask-smorest-api
+# (in terminal) docker run -p 5000:5000 -w //app -v "$(Get-Location)://app" flask-smorest-api
+# (to see id)   docker container ls
+# (to kill)     docker container kill <container-id>
 
 import uuid
 from flask import Flask, request

@@ -11,3 +11,4 @@ class StoreModel(db.Model):
         "ItemModel", back_populates="store", lazy="dynamic", cascade="all, delete"
     )
     # también podrías poner delete-orphan, si quieres que se borren los items que sean quitados de la lista y queden sin store.
+    tags = db.relationship("TagModel", back_populates="store", lazy="dynamic")

@@ -17,6 +17,7 @@ from blocklist import BLOCKLIST
 
 blp = Blueprint("Users", "users", description="Operations on users")
 
+
 @blp.route("/logout")
 class UserLogout(MethodView):
     @jwt_required()
@@ -24,6 +25,7 @@ class UserLogout(MethodView):
         jti = get_jwt()["jti"]
         BLOCKLIST.add(jti)
         return {"message": "Successfully logged out"}, 200
+
 
 @blp.route("/register")
 class UserRegister(MethodView):
@@ -40,7 +42,8 @@ class UserRegister(MethodView):
         db.session.commit()
 
         return {"message": "User created successfully."}, 201
-    
+
+
 @blp.route("/login")
 class UserLogin(MethodView):
     @blp.arguments(UserSchema)
@@ -57,6 +60,7 @@ class UserLogin(MethodView):
             return {"access_token": access_token, "refresh_token": refresh_token}, 200
 
         abort(401, message="Invalid credentials.")
+
 
 # just for testing this
 @blp.route("/user/<int:user_id>")
@@ -78,7 +82,8 @@ class User(MethodView):
         db.session.delete(user)
         db.session.commit()
         return {"message": "User deleted."}, 200
-    
+
+
 @blp.route("/refresh")
 class TokenRefresh(MethodView):
     @jwt_required(refresh=True)

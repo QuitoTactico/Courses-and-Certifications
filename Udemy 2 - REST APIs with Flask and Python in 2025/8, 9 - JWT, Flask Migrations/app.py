@@ -2,6 +2,11 @@
 # (to open) flask run
 # (close)   ctrl+C
 
+# Migrations:
+# (init)            flask db init
+# (make migrations) flask db migrate
+# (apply migration) flask db upgrade
+
 # Run continuously with docker:
 # (create img)  docker build -t flask-smorest-api .
 # (as daemon)   docker run -dp 5000:5000 -w //app -v "$(Get-Location)://app" flask-smorest-api
@@ -18,6 +23,7 @@ import os
 
 from flask import Flask, jsonify
 from flask_smorest import Api
+from flask_migrate import Migrate  # flask migrate es la conexión entre Alembic y Flask
 from flask_jwt_extended import JWTManager
 
 from db import db
@@ -50,6 +56,8 @@ def create_app(db_url=None):
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 
+    migrate = Migrate(app, db)
+
     api = Api(app)
 
     # no muy seguro, puedes cambiar "jose" por str(secrets.SystemRandom().getrandbits(128))
@@ -58,7 +66,9 @@ def create_app(db_url=None):
 
     @jwt.additional_claims_loader
     def add_claims_to_jwt(identity):
-        if identity == 1: # aquí asumimos que el usuario con id 1 es el admin, esto no necesariamente es cierto, normalmente se lee desde un config file o de la base de datos
+        if (
+            identity == 1
+        ):  # aquí asumimos que el usuario con id 1 es el admin, esto no necesariamente es cierto, normalmente se lee desde un config file o de la base de datos
             return {"is_admin": True}
         return {"is_admin": False}
 
@@ -89,11 +99,10 @@ def create_app(db_url=None):
             ),
             401,
         )
-    
+
     @jwt.token_in_blocklist_loader
     def check_if_token_in_blocklist(jwt_header, jwt_payload):
         return jwt_payload["jti"] in BLOCKLIST
-
 
     @jwt.revoked_token_loader
     def revoked_token_callback(jwt_header, jwt_payload):
@@ -103,7 +112,7 @@ def create_app(db_url=None):
             ),
             401,
         )
-    
+
     @jwt.needs_fresh_token_loader
     def token_not_fresh_callback(jwt_header, jwt_payload):
         return (
@@ -115,14 +124,16 @@ def create_app(db_url=None):
             ),
             401,
         )
-    
+
     # DEPRECATED
     # @app.before_first_request
     # def create_tables():
     #     db.create_all()
     # So...
-    with app.app_context():
-        db.create_all()
+    # ------------------------
+    # ahora que usamos flask migrate, no necesitamos a SQLAlchemy para inicializar la db
+    # with app.app_context():
+    #    db.create_all()
 
     api.register_blueprint(UserBlueprint)
     api.register_blueprint(ItemBlueprint)

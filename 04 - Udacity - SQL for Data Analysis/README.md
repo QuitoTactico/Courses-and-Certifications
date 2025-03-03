@@ -1,4 +1,8 @@
-https://www.udacity.com/course/sql-for-data-analysis--ud198
+Sources: 
+
+- https://www.udacity.com/course/intro-to-relational-databases--ud197
+- https://www.udacity.com/course/sql-for-data-analysis--ud198 (MOSTLY)
+- https://globant.udemy.com/course/sql-for-beginners-course/learn/lecture/40417882?learning_path_id=9400125#overview
 
 # SELECT, ORDER, OFFSET
 
@@ -258,17 +262,26 @@ En SQL, las funciones de agregación se utilizan para realizar cálculos en un c
 Cuenta el número de filas que coinciden con una condición.
 
 ```sql
-SELECT COUNT(*) AS total_empleados FROM empleados;
+SELECT COUNT(*) AS total_empleados 
+  FROM empleados;
 ```
 
 *Este ejemplo cuenta el total de empleados en la tabla.*
+
+También existe una versión para contar los diferentes valores.
+
+```sql
+SELECT COUNT(DISTINCT first_name) AS nombres_diferentes 
+  FROM empleados;
+```
 
 ### 2. `SUM()`
 
 Calcula la suma total de una columna numérica.
 
 ```sql
-SELECT SUM(salario) AS total_salarios FROM empleados;
+SELECT SUM(salario) AS total_salarios 
+  FROM empleados;
 ```
 
 *Este ejemplo suma todos los salarios de los empleados.*
@@ -278,7 +291,8 @@ SELECT SUM(salario) AS total_salarios FROM empleados;
 Calcula el promedio de una columna numérica.
 
 ```sql
-SELECT AVG(salario) AS salario_promedio FROM empleados;
+SELECT AVG(salario) AS salario_promedio 
+  FROM empleados;
 ```
 
 *Este ejemplo calcula el salario promedio de los empleados.*
@@ -288,7 +302,8 @@ SELECT AVG(salario) AS salario_promedio FROM empleados;
 Devuelve el valor mínimo de una columna.
 
 ```sql
-SELECT MIN(salario) AS salario_minimo FROM empleados;
+SELECT MIN(salario) AS salario_minimo 
+  FROM empleados;
 ```
 
 *Este ejemplo obtiene el salario más bajo entre los empleados.*
@@ -298,7 +313,8 @@ SELECT MIN(salario) AS salario_minimo FROM empleados;
 Devuelve el valor máximo de una columna.
 
 ```sql
-SELECT MAX(salario) AS salario_maximo FROM empleados;
+SELECT MAX(salario) AS salario_maximo 
+  FROM empleados;
 ```
 
 *Este ejemplo obtiene el salario más alto entre los empleados.*
@@ -309,8 +325,8 @@ Se utiliza junto con funciones de agregación para agrupar resultados por una o 
 
 ```sql
 SELECT departamento, COUNT(*) AS total_empleados
-FROM empleados
-GROUP BY departamento;
+  FROM empleados
+ GROUP BY departamento;
 ```
 
 *Este ejemplo cuenta el número de empleados en cada departamento.*
@@ -323,8 +339,8 @@ Es como un WHERE para los grupos.
 
 ```sql
 SELECT departamento, AVG(salario) AS salario_promedio
-FROM empleados
-GROUP BY departamento
+  FROM empleados
+ GROUP BY departamento
 HAVING AVG(salario) > 50000;
 ```
 
@@ -765,18 +781,30 @@ Los joins son fundamentales en SQL para trabajar con múltiples tablas y extraer
 ## Consejos antes de todo
 
 - NO es bueno usar WHERE después de un Join, porque recorres la pendejada dos veces. Es mejor agregar esa condición con un AND en el mismo JOIN. Que haga parte de la condición del JOIN, Una sola pasada.
-
-```sql
- SELECT orders.*, 
-	 	    accounts.*,
-	 FROM demo.orders
-	 LEFT JOIN demo.accounts
-		 ON orders.account_id = accounts.id
---WHERE accounts.sales_rep_id = 321500
-		AND accounts.sales_rep_id = 321500
-```
-
+    
+    ```sql
+     SELECT orders.*, 
+    	 	    accounts.*,
+    	 FROM demo.orders
+    	 LEFT JOIN demo.accounts
+    		 ON orders.account_id = accounts.id
+    --WHERE accounts.sales_rep_id = 321500
+    		AND accounts.sales_rep_id = 321500
+    ```
+    
 - Los JOIN son la cosa más horrible, dicen que son lo que más se puede simplificar usando WHEREs.
+- No tienen que usar una relación de igualdad necesariamente, pueden usar cualquier comparación. Por ejemplo esta:
+    
+    ```sql
+    SELECT accounts.name as account_name,
+           accounts.primary_poc as poc_name,
+           sales_reps.name as sales_rep_name
+      FROM accounts
+      LEFT JOIN sales_reps
+        ON accounts.sales_rep_id = sales_reps.id
+       AND accounts.primary_poc < sales_reps.name
+    ```
+    
 
 ## **1. INNER JOIN**
 
@@ -944,6 +972,23 @@ select a.id, b.id, a.building, a.room
 | 824292 | 118199 | Kendrick | 1A |
 | 105540 | 231742 | Kendrick | 3B |
 | 231742 | 105540 | Kendrick | 3B |
+
+O este segundo ejemplo para ver quiénes hicieron más de una compra en menos de 20 días:
+
+```sql
+SELECT o1.id AS o1_id,
+       o1.account_id AS o1_account_id,
+       o1.occurred_at AS o1_occurred_at,
+       o2.id AS o2_id,
+       o2.account_id AS o2_account_id,
+       o2.occurred_at AS o2_occurred_at
+  FROM orders o1
+ LEFT JOIN orders o2
+   ON o1.account_id = o2.account_id
+  AND o2.occurred_at > o1.occurred_at
+  AND o2.occurred_at <= o1.occurred_at + INTERVAL '28 days'
+ORDER BY o1.account_id, o1.occurred_at
+```
 
 # Window Functions - OVER(PARTITION … ORDER BY …)
 
@@ -1263,15 +1308,135 @@ FROM demo.orders
 - **RANK**: Filas con valores iguales comparten el mismo rango, y el siguiente rango salta el número de duplicados.
 - **DENSE_RANK**: Filas con valores iguales comparten el mismo rango, pero el siguiente rango es el siguiente número en secuencia, sin saltos.
 
-# CREATE
+# Performance Tuning
 
-## DATABASE
+## EXPLAIN
+
+Usar `EXPLAIN` es una práctica recomendada para entender y optimizar el rendimiento de las consultas SQL. Te permite identificar áreas de mejora y asegurarte de que las consultas se ejecuten de la manera más eficiente posible.
+
+```sql
+EXPLAIN
+SELECT *
+FROM demo.web_events_full
+WHERE occurred_at >= '2016-01-01'
+AND occurred_at < '2016-02-01'
+LIMIT 100
+```
+
+- **Descripción**: `EXPLAIN` se utiliza para mostrar el plan de ejecución de una consulta SQL. Proporciona información sobre cómo el motor de la base de datos planea ejecutar la consulta, incluyendo detalles sobre el acceso a las tablas, el uso de índices, el orden de las operaciones y el costo estimado de cada paso.
+- **Uso**: Al ejecutar `EXPLAIN` antes de una consulta, puedes obtener una visión general de la eficiencia de la consulta y detectar posibles cuellos de botella. Esto es útil para optimizar consultas, especialmente en bases de datos grandes.
+
+Da estas cosas:
+
+| Step | Description | Cost | Rows | Width |
+| --- | --- | --- | --- | --- |
+| Limit | Limit the number of rows to 100 | cost=0.00..83.12 | 100 | 75 |
+| Seq Scan | Sequential scan on web_events_full | cost=0.00..226.09 | 272 | 75 |
+| Filter | Filter on occurred_at conditions |  |  |  |
+|  | (occurred_at >= '2016-01-01' AND |  |  |  |
+|  | occurred_at < '2016-02-01') |  |  |  |
+- **Tipo de acceso**: Indica cómo se accede a los datos (por ejemplo, si se utiliza un índice o un escaneo completo de la tabla).
+- **Costo estimado**: Proporciona un costo estimado para ejecutar la consulta, que puede ayudar a comparar diferentes enfoques.
+- **Número de filas**: Estima cuántas filas se procesarán en cada etapa de la consulta.
+- **Orden de ejecución**: Muestra el orden en que se ejecutarán las operaciones.
+
+## JOINs
+
+- NO es bueno usar WHERE después de un JOIN, porque recorres la pendejada dos veces. Es mejor agregar esa condición con un AND en el mismo JOIN. Que haga parte de la condición del JOIN, Una sola pasada.
+    
+    ```sql
+     SELECT orders.*, 
+    	 	    accounts.*,
+    	 FROM demo.orders
+    	 LEFT JOIN demo.accounts
+    		 ON orders.account_id = accounts.id
+    --WHERE accounts.sales_rep_id = 321500
+    		AND accounts.sales_rep_id = 321500
+    ```
+    
+- Cuando tengas JOINs, no les hagas agregaciones. Mejor haz las agregaciones antes de hacer el JOIN, usando subquerys.
+    
+    Lo que pasa es que ejecuta las agregaciones después del JOIN pero antes/durante el GROUP BY, así que tiene que hacer agregaciones de tablas enoooormes. Es mejor hacer agregaciones antes cuando se pueda, si es que no dependen de cosas del JOIN sino de tablas individuales.
+    
+    ```sql
+    -- NO, LENTO
+    SELECT account_id,
+           COUNT(*) AS web_events
+      FROM demo.accounts accounts
+      JOIN demo.web_events_full events
+        ON events.account_id = accounts.id
+     GROUP BY 1
+     ORDER BY 2 DESC
+    ```
+    
+    ```sql
+    -- MEJOR, DESDE ANTES
+    SELECT a.name,
+           sub.web_events
+      FROM (
+    	     SELECT account_id,
+    	            COUNT(*) AS web_events
+    	       FROM demo.web_events_full
+    	      GROUP BY account_id
+         ) sub
+      JOIN demo.accounts a ON a.id = sub.account_id
+     ORDER BY sub.web_events DESC
+    ```
+    
+    Otro ejemplo más extremo es este, en donde la agregación se haría en 79.000 filas, para un resultado de cerca de 1.000:
+    
+    ```sql
+    SELECT DATE_TRUNC('day', o.occurred_at) AS date,
+           COUNT(DISTINCT a.sales_rep_id) AS active_sales_reps,
+           COUNT(DISTINCT o.id) AS orders,
+           COUNT(DISTInct we.id) AS web_visits
+      FROM accounts a
+      JOIN orders o
+        ON o.account_id = a.id
+      JOIN web_events we
+        ON DATE_TRUNC('day', we.occurred_at) = DATE_TRUNC('day', o.occurred_at)
+     GROUP BY 1
+     ORDER BY 1 DESC
+    ```
+    
+    ```sql
+    -- Mejor separado así. (Pudo ser con WITHs o vistas)
+    SELECT COALESCE(orders.date, web_events.date) AS date,
+           orders.active_sales_reps,
+    	     orders.orders,
+    	     web_events.web_visits
+      FROM (
+    		    SELECT DATE_TRUNC('day', o.occurred_at) AS date,
+    			         COUNT(a.sales_rep_id) AS active_sales_reps,
+    			         COUNT(o.id) AS orders
+    			    FROM demo.accounts a
+    			    JOIN demo.orders o ON o.account_id = a.id
+    		     GROUP BY 1
+           ) orders
+      FULL JOIN
+           (
+    				SELECT DATE_TRUNC('day', we.occurred_at) AS date,
+    					     COUNT(we.id) AS web_visits
+    				  FROM demo.web_events_full we
+    				 GROUP BY 1
+            ) web_events
+      FULL JOIN orders
+        ON web_events.date = orders.date
+     ORDER BY 1 DESC
+    ```
+    
+
+# C(R)UD
+
+## CREATE
+
+### DATABASE
 
 ```sql
 CREATE DATABASE forum;
 ```
 
-## TABLE
+### TABLE
 
 ```sql
 CREATE TABLE posts ( content TEXT,
@@ -1279,45 +1444,31 @@ CREATE TABLE posts ( content TEXT,
                      id SERIAL );
 ```
 
-# UPDATE
+### PRIMARY KEY
 
-```sql
-UPDATE usuarios
-SET correo = 'juan.perez@ejemplo.com', edad = 30
-WHERE id = 1;
-```
+- Simple
+    
+    ```sql
+    CREATE TABLE clientes (
+    id_cliente INT PRIMARY KEY,
+    nombre VARCHAR(100),
+    email VARCHAR(100)
+    );
+    ```
+    
+- Compuesta
+    
+    ```sql
+    CREATE TABLE inscripciones (
+    id_estudiante INT,
+    id_curso INT,
+    fecha_inscripcion DATE,
+    PRIMARY KEY (id_estudiante, id_curso)
+    );
+    ```
+    
 
-# DELETE
-
-```sql
-DELETE FROM usuarios
-WHERE id = 1;
-```
-
-# PRIMARY KEY
-
-## Simple
-
-```sql
-CREATE TABLE clientes (
-id_cliente INT PRIMARY KEY,
-nombre VARCHAR(100),
-email VARCHAR(100)
-);
-```
-
-## Compuesta
-
-```sql
-CREATE TABLE inscripciones (
-id_estudiante INT,
-id_curso INT,
-fecha_inscripcion DATE,
-PRIMARY KEY (id_estudiante, id_curso)
-);
-```
-
-# FOREAN KEY
+### FOREAN KEY
 
 ```sql
 CREATE TABLE cursos (
@@ -1351,6 +1502,21 @@ count INT
 ```
 
 </aside>
+
+## UPDATE
+
+```sql
+UPDATE usuarios
+SET correo = 'juan.perez@ejemplo.com', edad = 30
+WHERE id = 1;
+```
+
+## DELETE
+
+```sql
+DELETE FROM usuarios
+WHERE id = 1;
+```
 
 # EMR
 

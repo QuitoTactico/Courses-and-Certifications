@@ -3,8 +3,10 @@
 # como cuando es la misma clase, u otra
 # así que en vez de poner -> Class, ponemos -> "Class"
 
-class Perro:                         #    HERE
-    def __init__(self, nombre : str) -> "Perro":
+
+class Perro:  #    HERE
+    def __init__(self, nombre: str) -> "Perro":
         self.nombre = nombre
+
 
 luna = Perro("Luna")

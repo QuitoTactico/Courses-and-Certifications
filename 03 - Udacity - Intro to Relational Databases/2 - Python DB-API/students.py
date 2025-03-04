@@ -23,6 +23,6 @@ print(rows)
 print()
 print("Student names:")
 for row in rows:
-  print("  ", row[0])
+    print("  ", row[0])
 
 db.close()

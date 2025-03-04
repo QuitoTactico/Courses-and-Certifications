@@ -2,7 +2,8 @@ def sum(x, y):
     result = x + y
     return result
 
-nums = {'x': 3, 'y': 4}
+
+nums = {"x": 3, "y": 4}
 print(sum(**nums))  # increíble!
 
 # *nums  :  x y
@@ -10,8 +11,8 @@ print(sum(**nums))  # increíble!
 
 # y pues lo que ya sabías de mandar el desempaquetado
 
-nums2 = [1,2,3,4]
-print(*nums2, sep='|') # 1|2|3|4
+nums2 = [1, 2, 3, 4]
+print(*nums2, sep="|")  # 1|2|3|4
 
 
 # ver "parámetros infinitos.py" para recibirlos como **kwargs

@@ -5,7 +5,7 @@ def count_primes(n):
         times = int(n / i) + 1
 
         for mult in range(2, times):
-            primes.discard(i*mult)
+            primes.discard(i * mult)
 
     print(primes)
     return len(primes)

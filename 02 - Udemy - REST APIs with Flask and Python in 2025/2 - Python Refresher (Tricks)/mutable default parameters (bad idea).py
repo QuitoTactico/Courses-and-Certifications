@@ -6,8 +6,8 @@ from typing import List, Optional
 
 
 class Student:
-    #def __init__(self, name: str, grades: list = []): # no
+    # def __init__(self, name: str, grades: list = []): # no
     def __init__(self, name: str, grades: Optional[List[int]] = None):
         self.name = name
-        #self.grades = grades # no
-        self.grades = grades or [] # si
+        # self.grades = grades # no
+        self.grades = grades or []  # si

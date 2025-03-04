@@ -2,6 +2,9 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
+# Usually, the cluster URIs looks like: 'mongodb+srv://<username>:<password>@cluster0.h3aza.mongodb.net/'
+# Remember to add your IP to allowed addresses
+
 
 class MongoDB_Connection:
     # db_name : str
@@ -21,7 +24,6 @@ class MongoDB_Connection:
         if not self.cluster_uri:
             self.set_cluster_uri_by_env()
 
-
     def set_cluster_uri(self, cluster_uri: str) -> None:
         self.cluster_uri = cluster_uri
 
@@ -36,7 +38,6 @@ class MongoDB_Connection:
 
     def set_collection_name(self, collection_name: str) -> None:
         self.collection_name = collection_name
-
 
     def connect(self):
 

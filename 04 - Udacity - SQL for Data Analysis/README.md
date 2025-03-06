@@ -25,6 +25,18 @@ Acostumbra a poner los COMANDOS en mayúscula, a poner underscores en_las_column
 
 # GROUP BY
 
+Se utiliza junto con funciones de agregación para agrupar resultados por una o más columnas.
+
+*Este ejemplo cuenta el número de empleados en cada departamento:*
+
+```sql
+SELECT departamento, COUNT(*) AS total_empleados
+  FROM empleados
+ GROUP BY departamento;
+```
+
+Otro ejemplo
+
 ```sql
 -- Write your SQL query here to find the top 5 customers by total purchase amount
 -- USAR SIEMPRE `<variable>`, aquí tuve suerte por alguna razón
@@ -53,6 +65,21 @@ limit 5
     
     En este caso, `GROUP BY 1` agrupa los resultados por la columna `department`.
     
+
+## Having
+
+Se utiliza para filtrar los resultados de un `GROUP BY`, permitiendo condiciones en las funciones de agregación.
+
+Es como un WHERE para los grupos.
+
+```sql
+SELECT departamento, AVG(salario) AS salario_promedio
+  FROM empleados
+ GROUP BY departamento
+HAVING AVG(salario) > 50000;
+```
+
+*Este ejemplo muestra los departamentos donde el salario promedio es mayor a 50,000.*
 
 # Operadores Lógicos
 
@@ -243,7 +270,9 @@ FROM empleados;
 - `COALESCE` puede aceptar hasta 255 argumentos, pero si todos son nulos, el resultado será nulo.
 - El tipo de datos del resultado es el tipo de datos del primer argumento no nulo.
 
-# Funciones de Agregación (GROUP BY)
+# Funciones y más funciones!!!!!!!!
+
+## Funciones de Agregación (GROUP BY y Window)
 
 En SQL, las funciones de agregación se utilizan para realizar cálculos en un conjunto de valores y devolver un único valor. Aquí tienes una lista de las funciones de agregación más comunes disponibles en SQL, junto con una breve descripción y ejemplos:
 
@@ -319,80 +348,284 @@ SELECT MAX(salario) AS salario_maximo
 
 *Este ejemplo obtiene el salario más alto entre los empleados.*
 
-### 6. `GROUP BY`
+### **6. `VARIANCE()`**
 
-Se utiliza junto con funciones de agregación para agrupar resultados por una o más columnas.
+Calcula la varianza de un conjunto de valores.
+
+### **7. `STDDEV()`**
+
+Calcula la desviación estándar de un conjunto de valores.
+
+## Funciones de Ranking (GROUP BY y Window)
+
+### 1. `NTILE()`
+
+**NTILE(n)**: Divide el conjunto de resultados en `n` grupos (o "tiles") de tamaño aproximadamente igual y asigna un número de grupo a cada fila, basado en el orden especificado. Se utiliza para clasificar datos en cuartiles, quintiles, percentiles, etc.
+
+La columna que se ponga en ORDER BY indica según qué se asignarán esos tiles. En este caso:
+
+- Los valores más altos de `standard_qty` (300, 250) están en los cuartiles y quintiles más altos.
+- Los valores más bajos (40, 60, 80) están en los cuartiles y quintiles más bajos.
 
 ```sql
-SELECT departamento, COUNT(*) AS total_empleados
-  FROM empleados
- GROUP BY departamento;
+SELECT 
+    id,
+    account_id,
+    occurred_at,
+    standard_qty,
+    NTILE(4) OVER (ORDER BY standard_qty) AS quartile,
+    NTILE(5) OVER (ORDER BY standard_qty) AS quintile,
+    NTILE(100) OVER (ORDER BY standard_qty) AS percentile
+FROM demo.orders
+ORDER BY standard_qty DESC
 ```
 
-*Este ejemplo cuenta el número de empleados en cada departamento.*
+| id | account_id | occurred_at | standard_qty | quartile | quintile | percentile |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 100 | 2023-01-01 10:00:00 | 300 | 4 | 5 | 100 |
+| 2 | 200 | 2023-01-02 11:00:00 | 250 | 4 | 5 | 90 |
+| 3 | 300 | 2023-01-03 12:00:00 | 200 | 3 | 4 | 80 |
+| 4 | 400 | 2023-01-04 13:00:00 | 180 | 3 | 4 | 70 |
+| 5 | 500 | 2023-01-05 14:00:00 | 150 | 2 | 3 | 60 |
+| 6 | 600 | 2023-01-06 15:00:00 | 120 | 2 | 3 | 50 |
+| 7 | 700 | 2023-01-07 16:00:00 | 100 | 1 | 2 | 40 |
+| 8 | 800 | 2023-01-08 17:00:00 | 80 | 1 | 2 | 30 |
+| 9 | 900 | 2023-01-09 18:00:00 | 60 | 1 | 1 | 20 |
+| 10 | 1000 | 2023-01-10 19:00:00 | 40 | 1 | 1 | 10 |
+- **standard_qty**: Valores aleatorios donde los más altos están en los percentiles, cuartiles y quintiles más altos.
+- **quartile**: Indica en qué cuartil se encuentra cada fila (1 a 4), donde 4 es el cuartil más alto.
+- **quintile**: Indica en qué quintil se encuentra cada fila (1 a 5), donde 5 es el quintil más alto.
+- **percentile**: Indica en qué percentil se encuentra cada fila (1 a 100), donde 100 es el percentil más alto.
 
-### 7. `HAVING`
+### 2. `ROW_NUMBER()`
 
-Se utiliza para filtrar los resultados de un `GROUP BY`, permitiendo condiciones en las funciones de agregación.
+ Asigna un número único a cada fila dentro de una partición de un conjunto de resultados. Este número es secuencial y no tiene en cuenta duplicados.
 
-Es como un WHERE para los grupos.
+`ROW_NUMBER` asigna un número único y secuencial a cada fila dentro de una partición de un conjunto de resultados. No considera duplicados.
+
+**Ejemplo de Código**:
 
 ```sql
-SELECT departamento, AVG(salario) AS salario_promedio
-  FROM empleados
- GROUP BY departamento
-HAVING AVG(salario) > 50000;
+SELECT
+    id,
+    account_id,
+    DATE_TRUNC('month', occurred_at) AS month,
+    ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month', occurred_at)) AS row_num
+FROM demo.orders
+
 ```
 
-*Este ejemplo muestra los departamentos donde el salario promedio es mayor a 50,000.*
+- **PARTITION BY**: Divide los resultados por `account_id`.
+- **ORDER BY**: Ordena las filas dentro de cada partición por el mes truncado de `occurred_at`.
+- **Resultado**: Cada fila recibe un número único, incluso si hay filas con el mismo mes.
 
-# TEXT Functions
+**Tabla de Respuesta Ejemplo**:
 
-1. **`LENGTH`**
-    - **Descripción**: Devuelve la longitud de una cadena.
-    - **Ejemplo**: `LENGTH('Hola')` devuelve `4`.
-2. **`LEFT`**
-    - **Descripción**: Devuelve un número específico de caracteres desde el inicio de una cadena.
-    - **Ejemplo**: `LEFT('Hola Mundo', 4)` devuelve `'Hola'`.
-3. **`RIGHT`**
-    - **Descripción**: Devuelve un número específico de caracteres desde el final de una cadena.
-    - **Ejemplo**: `RIGHT('Hola Mundo', 5)` devuelve `'Mundo'`.
-4. **`SUBSTRING` o `SUBSTR`**
-    - **Descripción**: Devuelve una parte de una cadena, comenzando en una posición específica.
-    - **Ejemplo**: `SUBSTRING('Hola Mundo', 1, 4)` devuelve `'Hola'`.
-5. **`UPPER`**
-    - **Descripción**: Convierte una cadena a mayúsculas.
-    - **Ejemplo**: `UPPER('Hola')` devuelve `'HOLA'`.
-6. **`LOWER`**
-    - **Descripción**: Convierte una cadena a minúsculas.
-    - **Ejemplo**: `LOWER('Hola')` devuelve `'hola'`.
-7. **`TRIM`**
-    - **Descripción**: Elimina espacios en blanco al principio y al final de una cadena.
-    - **Ejemplo**: `TRIM(' Hola ')` devuelve `'Hola'`.
-8. **`CONCAT`**
-    - **Descripción**: Une dos o más cadenas en una sola.
-    - **Ejemplo**: `CONCAT('Hola', ' ', 'Mundo')` devuelve `'Hola Mundo'`.
-9. **`REPLACE`**
-    - **Descripción**: Reemplaza todas las ocurrencias de una subcadena en una cadena por otra subcadena.
-    - **Ejemplo**: `REPLACE('Hola Mundo', 'Mundo', 'SQL')` devuelve `'Hola SQL'`.
-10. **`POSITION` o `CHARINDEX`**
-    - **Descripción**: Devuelve la posición de la primera ocurrencia de una subcadena en una cadena.
-    - **Ejemplo**: `POSITION('Mundo' IN 'Hola Mundo')` devuelve `6`.
-11. **`CHAR_LENGTH` o `CHARACTER_LENGTH`**
-    - **Descripción**: Devuelve la longitud de una cadena en caracteres.
-    - **Ejemplo**: `CHAR_LENGTH('Hola Mundo')` devuelve `10`.
-12. **`FORMAT`**
-    - **Descripción**: Formatea una cadena según un formato específico (varía según el SGBD).
-    - **Ejemplo**: `FORMAT(12345.6789, 'N2')` devuelve `'12,345.68'`.
-13. **`REVERSE`**
-    - **Descripción**: Invierte el orden de los caracteres en una cadena.
-    - **Ejemplo**: `REVERSE('Hola')` devuelve `'aloH'`.
+| id | account_id | month | row_num |
+| --- | --- | --- | --- |
+| 1 | 100 | 2023-01-01 | 1 |
+| 2 | 100 | 2023-01-15 | 2 |
+| 3 | 200 | 2023-01-05 | 1 |
+| 4 | 200 | 2023-02-01 | 2 |
+| 5 | 200 | 2023-02-15 | 3 |
 
-# DATE_Functions
+### 3. `RANK()`
+
+Similar a `ROW_NUMBER`, pero asigna el mismo número a filas con valores iguales en la columna especificada. Si hay duplicados, el siguiente número asignado saltará el número de duplicados (el siguiente rango se ajusta en consecuencia).
+
+`RANK` también asigna un número a cada fila, pero si hay filas con valores iguales en la columna especificada, recibirán el mismo rango. El siguiente número asignado saltará el número de duplicados.
+
+**Ejemplo de Código**:
+
+```sql
+SELECT
+    id,
+    account_id,
+    DATE_TRUNC('month', occurred_at) AS month,
+    RANK() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month', occurred_at)) AS rank_num
+FROM demo.orders
+
+```
+
+- **PARTITION BY**: Divide los resultados por `account_id`.
+- **ORDER BY**: Ordena las filas por el mes truncado de `occurred_at`.
+- **Resultado**: Las filas con el mismo mes recibirán el mismo rango, y el siguiente rango saltará el número de duplicados.
+
+**Tabla de Respuesta Ejemplo**:
+
+| id | account_id | month | rank_num |
+| --- | --- | --- | --- |
+| 1 | 100 | 2023-01-01 | 1 |
+| 2 | 100 | 2023-01-15 | 2 |
+| 3 | 200 | 2023-01-05 | 1 |
+| 4 | 200 | 2023-01-05 | 1 |
+| 5 | 200 | 2023-02-01 | 3 |
+
+### 4. `DENSE_RANK()`
+
+También asigna el mismo número a filas con valores iguales, pero no deja huecos en la numeración. El siguiente número asignado será el siguiente en secuencia.
+
+`DENSE_RANK` es similar a `RANK`, pero no deja huecos en la numeración. Si hay duplicados, el siguiente número asignado será el siguiente en secuencia.
+
+**Ejemplo de Código**:
+
+```sql
+SELECT
+    id,
+    account_id,
+    DATE_TRUNC('month', occurred_at) AS month,
+    DENSE_RANK() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month', occurred_at)) AS dense_rank_num
+FROM demo.orders
+
+```
+
+- **PARTITION BY**: Divide los resultados por `account_id`.
+- **ORDER BY**: Ordena las filas por el mes truncado de `occurred_at`.
+- **Resultado**: Las filas con el mismo mes recibirán el mismo rango, y el siguiente rango será el siguiente número en secuencia.
+
+**Tabla de Respuesta Ejemplo**:
+
+| id | account_id | month | dense_rank_num |
+| --- | --- | --- | --- |
+| 1 | 100 | 2023-01-01 | 1 |
+| 2 | 100 | 2023-01-15 | 2 |
+| 3 | 200 | 2023-01-05 | 1 |
+| 4 | 200 | 2023-01-05 | 1 |
+| 5 | 200 | 2023-02-01 | 2 |
+
+### 5. `PERCENT_RANK()`
+
+Calcula el porcentaje de un rango en relación al número total de filas.
+
+### **6. `CUME_DIST()`**
+
+Calcula la distribución acumulativa de un valor en relación con el conjunto de datos.
+
+## Funciones de Valor (GROUP BY y Window)
+
+### 1. `LAG() y LEAD()`
+
+- **LAG()**: Devuelve el valor de una fila anterior en el conjunto de resultados, permitiendo comparar con la fila actual.
+- **LEAD()**: Devuelve el valor de una fila siguiente en el conjunto de resultados, permitiendo comparar con la fila actual.
+
+```sql
+SELECT
+    account_id,
+    standard_sum,
+    LAG(standard_sum) OVER (ORDER BY standard_sum) AS lag,
+    LEAD(standard_sum) OVER (ORDER BY standard_sum) AS lead,
+    standard_sum - LAG(standard_sum) OVER (ORDER BY standard_sum) AS lag_difference,
+    LEAD(standard_sum) OVER (ORDER BY standard_sum) - standard_sum AS lead_difference
+FROM (
+    SELECT
+        account_id,
+        SUM(standard_qty) AS standard_sum
+    FROM demo.orders
+    GROUP BY account_id
+) sub
+```
+
+| account_id | standard_sum | lag | lead | lag_difference | lead_difference |
+| --- | --- | --- | --- | --- | --- |
+| 1901 | 0 | NULL | 79 | NULL | 79 |
+| 3371 | 79 | 0 | 102 | 79 | 23 |
+| 1961 | 102 | 79 | 116 | 23 | 14 |
+| 3401 | 116 | 102 | 117 | 14 | 1 |
+| 3741 | 117 | 116 | 123 | 1 | 6 |
+| 4321 | 123 | 117 | 149 | 6 | 26 |
+| 1671 | 149 | 123 | 167 | 26 | 18 |
+| 3521 | 167 | 149 | NULL | 18 | NULL |
+- **account_id**: Identificador de la cuenta.
+- **standard_sum**: Suma de `standard_qty` para cada `account_id`.
+- **lag**: Valor de `standard_sum` de la fila anterior.
+- **lead**: Valor de `standard_sum` de la siguiente fila.
+- **lag_difference**: Diferencia entre `standard_sum` y el valor de la fila anterior.
+- **lead_difference**: Diferencia entre el valor de la siguiente fila y `standard_sum`.
+
+### **2. `FIRST_VALUE() y LAST_VALUE()`**
+
+Devuelven el primer y el último valor en un conjunto de filas respectivamente.
+
+### **3. `NTH_VALUE()`**
+
+Devuelve el n-ésimo valor en un conjunto de filas.
+
+### **4. `CYCLE()`**
+
+Permite crear un ciclo en las filas, repitiendo valores cuando se alcanza el final de la partición.
+
+## Funciones de Texto (TEXT funcs)
+
+### **1. `LENGTH`**
+
+- **Descripción**: Devuelve la longitud de una cadena.
+- **Ejemplo**: `LENGTH('Hola')` devuelve `4`.
+
+### **2. `LEFT`**
+
+- **Descripción**: Devuelve un número específico de caracteres desde el inicio de una cadena.
+- **Ejemplo**: `LEFT('Hola Mundo', 4)` devuelve `'Hola'`.
+
+### **3. `RIGHT`**
+
+- **Descripción**: Devuelve un número específico de caracteres desde el final de una cadena.
+- **Ejemplo**: `RIGHT('Hola Mundo', 5)` devuelve `'Mundo'`.
+
+### **4. `SUBSTRING` o `SUBSTR`**
+
+- **Descripción**: Devuelve una parte de una cadena, comenzando en una posición específica.
+- **Ejemplo**: `SUBSTRING('Hola Mundo', 1, 4)` devuelve `'Hola'`.
+
+### **5. `UPPER`**
+
+- **Descripción**: Convierte una cadena a mayúsculas.
+- **Ejemplo**: `UPPER('Hola')` devuelve `'HOLA'`.
+
+### **6. `LOWER`**
+
+- **Descripción**: Convierte una cadena a minúsculas.
+- **Ejemplo**: `LOWER('Hola')` devuelve `'hola'`.
+
+### **7. `TRIM`**
+
+- **Descripción**: Elimina espacios en blanco al principio y al final de una cadena.
+- **Ejemplo**: `TRIM(' Hola ')` devuelve `'Hola'`.
+
+### **8. `CONCAT`**
+
+- **Descripción**: Une dos o más cadenas en una sola.
+- **Ejemplo**: `CONCAT('Hola', ' ', 'Mundo')` devuelve `'Hola Mundo'`.
+
+### **9. `REPLACE`**
+
+- **Descripción**: Reemplaza todas las ocurrencias de una subcadena en una cadena por otra subcadena.
+- **Ejemplo**: `REPLACE('Hola Mundo', 'Mundo', 'SQL')` devuelve `'Hola SQL'`.
+
+### **10. `POSITION` o `CHARINDEX`**
+
+- **Descripción**: Devuelve la posición de la primera ocurrencia de una subcadena en una cadena.
+- **Ejemplo**: `POSITION('Mundo' IN 'Hola Mundo')` devuelve `6`.
+
+### **11. `CHAR_LENGTH` o `CHARACTER_LENGTH`**
+
+- **Descripción**: Devuelve la longitud de una cadena en caracteres.
+- **Ejemplo**: `CHAR_LENGTH('Hola Mundo')` devuelve `10`.
+
+### **12. `FORMAT`**
+
+- **Descripción**: Formatea una cadena según un formato específico (varía según el SGBD).
+- **Ejemplo**: `FORMAT(12345.6789, 'N2')` devuelve `'12,345.68'`.
+
+### **13. `REVERSE`**
+
+- **Descripción**: Invierte el orden de los caracteres en una cadena.
+- **Ejemplo**: `REVERSE('Hola')` devuelve `'aloH'`.
+
+## Funciones de Fecha (DATE funcs)
 
 Las funciones de fecha en SQL se utilizan para manipular y extraer información de valores de fecha y hora. Aquí te presento algunas de las más comunes:
 
-### 1. **DATE_TRUNC**
+### 1. **`DATE_TRUNC`**
 
 - **Descripción**: `DATE_TRUNC` se utiliza para truncar (eliminar) la parte menos significativa de una fecha, redondeándola a una unidad de tiempo específica (como año, mes, día, etc.).
 - **Sintaxis:**
@@ -439,7 +672,7 @@ Las funciones de fecha en SQL se utilizan para manipular y extraer información 
     | 2023-10-03 00:00:00 | 20 |
     | 2023-10-04 00:00:00 | 15 |
 
-### 2. **DATE_PART**
+### 2. **`DATE_PART`**
 
 - **Descripción**: `DATE_PART` se utiliza para extraer una parte específica de una fecha, como el año, mes, día, hora, etc.
 - **Sintaxis**:
@@ -485,7 +718,7 @@ Las funciones de fecha en SQL se utilizan para manipular y extraer información 
     | 2 | 200 |
     | 3 | 300 |
 
-### **3. CURRENT_DATE**
+### **3. `CURRENT_DATE**`
 
 Devuelve la fecha actual.
 
@@ -493,7 +726,7 @@ Devuelve la fecha actual.
 SELECT CURRENT_DATE;
 ```
 
-### **4. NOW()**
+### **4. `NOW()`**
 
 Devuelve la fecha y hora actual.
 
@@ -501,7 +734,7 @@ Devuelve la fecha y hora actual.
 SELECT NOW();
 ```
 
-### **5. DATE_ADD / DATE_SUB**
+### **5. `DATE_ADD / DATE_SUB`**
 
 Se utilizan para sumar o restar intervalos de tiempo a una fecha (dependiendo del sistema de gestión de bases de datos).
 
@@ -509,7 +742,7 @@ Se utilizan para sumar o restar intervalos de tiempo a una fecha (dependiendo de
 SELECT DATE_ADD('2023-10-15', INTERVAL '1 day');
 ```
 
-### **6. EXTRACT**
+### **6. `EXTRACT`**
 
 Similar a `DATE_PART`, se utiliza para obtener partes específicas de una fecha.
 
@@ -1009,7 +1242,17 @@ Las window functions permiten realizar cálculos sobre un conjunto de filas que 
 - **Agrupación de Resultados**: Aunque `ORDER BY` no agrupa los resultados en el sentido tradicional (como lo haría un `GROUP BY`), sí afecta cómo se calculan los resultados de las funciones de ventana. Por ejemplo, si tienes un `SUM` con `ORDER BY`, el resultado de la suma se calculará acumulativamente hasta la fila actual dentro de la partición.
 - **Resultados Equivalentes**: Cuando se utiliza `ORDER BY` en combinación con `PARTITION BY`, las filas que tienen el mismo valor en la columna de ordenación recibirán el mismo resultado para las funciones de agregación. Esto significa que, aunque los cálculos se realicen hasta la fila actual, los resultados para filas equivalentes en el `ORDER BY` serán los mismos.
 
-### Ejemplo simple
+## Funciones Usables
+
+Las usables son las funciones de agregación, ranking y valor.
+
+Para esto, ver:
+
+- [Funciones de Agregación (GROUP BY y Window)](https://www.notion.so/Funciones-de-Agregaci-n-GROUP-BY-y-Window-1a6450a7153c80cdb4caf40e20c46bdd?pvs=21)
+- [Funciones de Ranking (GROUP BY y Window)](https://www.notion.so/Funciones-de-Ranking-GROUP-BY-y-Window-1ae450a7153c80ed95e8c10b9e52a4e3?pvs=21)
+- [Funciones de Valor (GROUP BY y Window)](https://www.notion.so/Funciones-de-Valor-GROUP-BY-y-Window-1ae450a7153c80ddb21ce0a41eae0137?pvs=21)
+
+## Ejemplo simple
 
 Si tienes un conjunto de datos con `account_id` y `occurred_at`, y aplicas:
 
@@ -1021,7 +1264,7 @@ SUM(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month', occ
 - **PARTITION BY account_id**: Los cálculos de suma se reinician para cada `account_id`.
 - **ORDER BY DATE_TRUNC('month', occurred_at)**: Dentro de cada `account_id`, las filas se ordenan por mes. La suma se calculará acumulativamente hasta la fila actual, pero el resultado se mostrará para cada fila en esa partición.
 
-### Ejemplo completo
+## Ejemplo completo
 
 ```sql
 SELECT
@@ -1119,194 +1362,6 @@ Esta consulta SQL calcula la cantidad estándar de los pedidos y la suma acumula
 5. **FROM demo.orders**: Se está seleccionando de la tabla `orders`, que se encuentra en el esquema `demo`.
 
 Si usaras **`GROUP BY`**, perderías la granularidad de las filas individuales, ya que el resultado mostraría una fila por cada grupo (en este caso, un mes). En cambio, al usar window functions, puedes mantener todas las filas originales y agregar información adicional (como el total acumulado) sin eliminar datos.
-
-## LAG() y LEAD()
-
-- **LAG()**: Devuelve el valor de una fila anterior en el conjunto de resultados, permitiendo comparar con la fila actual.
-- **LEAD()**: Devuelve el valor de una fila siguiente en el conjunto de resultados, permitiendo comparar con la fila actual.
-
-```sql
-SELECT
-    account_id,
-    standard_sum,
-    LAG(standard_sum) OVER (ORDER BY standard_sum) AS lag,
-    LEAD(standard_sum) OVER (ORDER BY standard_sum) AS lead,
-    standard_sum - LAG(standard_sum) OVER (ORDER BY standard_sum) AS lag_difference,
-    LEAD(standard_sum) OVER (ORDER BY standard_sum) - standard_sum AS lead_difference
-FROM (
-    SELECT
-        account_id,
-        SUM(standard_qty) AS standard_sum
-    FROM demo.orders
-    GROUP BY account_id
-) sub
-```
-
-| account_id | standard_sum | lag | lead | lag_difference | lead_difference |
-| --- | --- | --- | --- | --- | --- |
-| 1901 | 0 | NULL | 79 | NULL | 79 |
-| 3371 | 79 | 0 | 102 | 79 | 23 |
-| 1961 | 102 | 79 | 116 | 23 | 14 |
-| 3401 | 116 | 102 | 117 | 14 | 1 |
-| 3741 | 117 | 116 | 123 | 1 | 6 |
-| 4321 | 123 | 117 | 149 | 6 | 26 |
-| 1671 | 149 | 123 | 167 | 26 | 18 |
-| 3521 | 167 | 149 | NULL | 18 | NULL |
-- **account_id**: Identificador de la cuenta.
-- **standard_sum**: Suma de `standard_qty` para cada `account_id`.
-- **lag**: Valor de `standard_sum` de la fila anterior.
-- **lead**: Valor de `standard_sum` de la siguiente fila.
-- **lag_difference**: Diferencia entre `standard_sum` y el valor de la fila anterior.
-- **lead_difference**: Diferencia entre el valor de la siguiente fila y `standard_sum`.
-
-## NTILES()
-
-**NTILE(n)**: Divide el conjunto de resultados en `n` grupos (o "tiles") de tamaño aproximadamente igual y asigna un número de grupo a cada fila, basado en el orden especificado. Se utiliza para clasificar datos en cuartiles, quintiles, percentiles, etc.
-
-La columna que se ponga en ORDER BY indica según qué se asignarán esos tiles. En este caso:
-
-- Los valores más altos de `standard_qty` (300, 250) están en los cuartiles y quintiles más altos.
-- Los valores más bajos (40, 60, 80) están en los cuartiles y quintiles más bajos.
-
-```sql
-SELECT 
-    id,
-    account_id,
-    occurred_at,
-    standard_qty,
-    NTILE(4) OVER (ORDER BY standard_qty) AS quartile,
-    NTILE(5) OVER (ORDER BY standard_qty) AS quintile,
-    NTILE(100) OVER (ORDER BY standard_qty) AS percentile
-FROM demo.orders
-ORDER BY standard_qty DESC
-```
-
-| id | account_id | occurred_at | standard_qty | quartile | quintile | percentile |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | 100 | 2023-01-01 10:00:00 | 300 | 4 | 5 | 100 |
-| 2 | 200 | 2023-01-02 11:00:00 | 250 | 4 | 5 | 90 |
-| 3 | 300 | 2023-01-03 12:00:00 | 200 | 3 | 4 | 80 |
-| 4 | 400 | 2023-01-04 13:00:00 | 180 | 3 | 4 | 70 |
-| 5 | 500 | 2023-01-05 14:00:00 | 150 | 2 | 3 | 60 |
-| 6 | 600 | 2023-01-06 15:00:00 | 120 | 2 | 3 | 50 |
-| 7 | 700 | 2023-01-07 16:00:00 | 100 | 1 | 2 | 40 |
-| 8 | 800 | 2023-01-08 17:00:00 | 80 | 1 | 2 | 30 |
-| 9 | 900 | 2023-01-09 18:00:00 | 60 | 1 | 1 | 20 |
-| 10 | 1000 | 2023-01-10 19:00:00 | 40 | 1 | 1 | 10 |
-- **standard_qty**: Valores aleatorios donde los más altos están en los percentiles, cuartiles y quintiles más altos.
-- **quartile**: Indica en qué cuartil se encuentra cada fila (1 a 4), donde 4 es el cuartil más alto.
-- **quintile**: Indica en qué quintil se encuentra cada fila (1 a 5), donde 5 es el quintil más alto.
-- **percentile**: Indica en qué percentil se encuentra cada fila (1 a 100), donde 100 es el percentil más alto.
-
-## ROW_NUMBER(), RANK() y DENSE_RANK()
-
-1. **ROW_NUMBER()**: Asigna un número único a cada fila dentro de una partición de un conjunto de resultados. Este número es secuencial y no tiene en cuenta duplicados.
-2. **RANK()**: Similar a `ROW_NUMBER`, pero asigna el mismo número a filas con valores iguales en la columna especificada. Si hay duplicados, el siguiente número asignado saltará el número de duplicados (el siguiente rango se ajusta en consecuencia).
-3. **DENSE_RANK()**: También asigna el mismo número a filas con valores iguales, pero no deja huecos en la numeración. El siguiente número asignado será el siguiente en secuencia.
-
-### 1. ROW_NUMBER()
-
-**Descripción**:
-
-`ROW_NUMBER` asigna un número único y secuencial a cada fila dentro de una partición de un conjunto de resultados. No considera duplicados.
-
-**Ejemplo de Código**:
-
-```sql
-SELECT
-    id,
-    account_id,
-    DATE_TRUNC('month', occurred_at) AS month,
-    ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month', occurred_at)) AS row_num
-FROM demo.orders
-
-```
-
-- **PARTITION BY**: Divide los resultados por `account_id`.
-- **ORDER BY**: Ordena las filas dentro de cada partición por el mes truncado de `occurred_at`.
-- **Resultado**: Cada fila recibe un número único, incluso si hay filas con el mismo mes.
-
-**Tabla de Respuesta Ejemplo**:
-
-| id | account_id | month | row_num |
-| --- | --- | --- | --- |
-| 1 | 100 | 2023-01-01 | 1 |
-| 2 | 100 | 2023-01-15 | 2 |
-| 3 | 200 | 2023-01-05 | 1 |
-| 4 | 200 | 2023-02-01 | 2 |
-| 5 | 200 | 2023-02-15 | 3 |
-
-### 2. RANK()
-
-**Descripción**:
-
-`RANK` también asigna un número a cada fila, pero si hay filas con valores iguales en la columna especificada, recibirán el mismo rango. El siguiente número asignado saltará el número de duplicados.
-
-**Ejemplo de Código**:
-
-```sql
-SELECT
-    id,
-    account_id,
-    DATE_TRUNC('month', occurred_at) AS month,
-    RANK() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month', occurred_at)) AS rank_num
-FROM demo.orders
-
-```
-
-- **PARTITION BY**: Divide los resultados por `account_id`.
-- **ORDER BY**: Ordena las filas por el mes truncado de `occurred_at`.
-- **Resultado**: Las filas con el mismo mes recibirán el mismo rango, y el siguiente rango saltará el número de duplicados.
-
-**Tabla de Respuesta Ejemplo**:
-
-| id | account_id | month | rank_num |
-| --- | --- | --- | --- |
-| 1 | 100 | 2023-01-01 | 1 |
-| 2 | 100 | 2023-01-15 | 2 |
-| 3 | 200 | 2023-01-05 | 1 |
-| 4 | 200 | 2023-01-05 | 1 |
-| 5 | 200 | 2023-02-01 | 3 |
-
-### 3. DENSE_RANK()
-
-**Descripción**:
-
-`DENSE_RANK` es similar a `RANK`, pero no deja huecos en la numeración. Si hay duplicados, el siguiente número asignado será el siguiente en secuencia.
-
-**Ejemplo de Código**:
-
-```sql
-SELECT
-    id,
-    account_id,
-    DATE_TRUNC('month', occurred_at) AS month,
-    DENSE_RANK() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month', occurred_at)) AS dense_rank_num
-FROM demo.orders
-
-```
-
-- **PARTITION BY**: Divide los resultados por `account_id`.
-- **ORDER BY**: Ordena las filas por el mes truncado de `occurred_at`.
-- **Resultado**: Las filas con el mismo mes recibirán el mismo rango, y el siguiente rango será el siguiente número en secuencia.
-
-**Tabla de Respuesta Ejemplo**:
-
-| id | account_id | month | dense_rank_num |
-| --- | --- | --- | --- |
-| 1 | 100 | 2023-01-01 | 1 |
-| 2 | 100 | 2023-01-15 | 2 |
-| 3 | 200 | 2023-01-05 | 1 |
-| 4 | 200 | 2023-01-05 | 1 |
-| 5 | 200 | 2023-02-01 | 2 |
-
----
-
-### Resumen Comparativo
-
-- **ROW_NUMBER**: Cada fila tiene un número único.
-- **RANK**: Filas con valores iguales comparten el mismo rango, y el siguiente rango salta el número de duplicados.
-- **DENSE_RANK**: Filas con valores iguales comparten el mismo rango, pero el siguiente rango es el siguiente número en secuencia, sin saltos.
 
 # Performance Tuning
 
@@ -1424,100 +1479,3 @@ Da estas cosas:
         ON web_events.date = orders.date
      ORDER BY 1 DESC
     ```
-    
-
-# C(R)UD
-
-## CREATE
-
-### DATABASE
-
-```sql
-CREATE DATABASE forum;
-```
-
-### TABLE
-
-```sql
-CREATE TABLE posts ( content TEXT,
-                     time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                     id SERIAL );
-```
-
-### PRIMARY KEY
-
-- Simple
-    
-    ```sql
-    CREATE TABLE clientes (
-    id_cliente INT PRIMARY KEY,
-    nombre VARCHAR(100),
-    email VARCHAR(100)
-    );
-    ```
-    
-- Compuesta
-    
-    ```sql
-    CREATE TABLE inscripciones (
-    id_estudiante INT,
-    id_curso INT,
-    fecha_inscripcion DATE,
-    PRIMARY KEY (id_estudiante, id_curso)
-    );
-    ```
-    
-
-### FOREAN KEY
-
-```sql
-CREATE TABLE cursos (
-id_curso INT PRIMARY KEY,
-nombre_curso VARCHAR(100)
-);
-```
-
-```sql
-CREATE TABLE inscripciones (
-id_estudiante INT,
-id_curso INT,
-fecha_inscripcion DATE,
-PRIMARY KEY (id_estudiante, id_curso),
-FOREIGN KEY (id_estudiante) REFERENCES clientes(id_cliente),
-FOREIGN KEY (id_curso) REFERENCES cursos(id_curso)
-);
-```
-
-<aside>
-💡
-
-Y hay una forma extra, para cuando la columna se llama igual en ambas tablas:
-
-```sql
-CREATE TABLE sales (
-sku TEXT REFERENCES products, -- columna products.sku
-sale_date DATE,
-count INT
-);
-```
-
-</aside>
-
-## UPDATE
-
-```sql
-UPDATE usuarios
-SET correo = 'juan.perez@ejemplo.com', edad = 30
-WHERE id = 1;
-```
-
-## DELETE
-
-```sql
-DELETE FROM usuarios
-WHERE id = 1;
-```
-
-# EMR
-
-![image.png](attachment:164aebaf-8778-4012-ad1f-dae7c1f61ade:image.png)

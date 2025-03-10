@@ -1,4 +1,4 @@
-Sources: 
+# Sources: 
 
 - https://www.udacity.com/course/intro-to-relational-databases--ud197
 - https://www.udacity.com/course/sql-for-data-analysis--ud198 (MOSTLY)

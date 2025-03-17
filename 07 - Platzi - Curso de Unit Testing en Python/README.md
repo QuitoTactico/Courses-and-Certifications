@@ -29,6 +29,9 @@ https://docs.python.org/3/library/unittest.html
 
 # Unit Test
 
+- **Pytest** es ideal si buscas una herramienta flexible, con una sintaxis más limpia y una comunidad activa que ofrece muchos plugins.
+- **Unittest** es una buena opción si prefieres una herramienta integrada en la biblioteca estándar de Python y una estructura más clásica.
+
 ## Assert simple
 
 Cuando la condición de adentro da True, no pasa nada. Cuando da False u otra cosa, raise an AssertException
@@ -477,6 +480,8 @@ Acá, por cada caso se le está creando un subTest. El testing interface de VSC 
 
 ### Ejecución
 
+Verás, no podrás correr las pruebas si antes no las “descubres”, el runner necesita saber que esos archivos existen, así que la primera vez necesitarás agregar `discover` en el comando. Las demás veces no será necesario, aunque agregues funciones en los mismos archivos. Pero necesitarás volver a usar discover cuando agregues un archivo nuevo.
+
 - CMD:
     - No verbose:
         
@@ -537,6 +542,71 @@ Acá, por cada caso se le está creando un subTest. El testing interface de VSC 
     
     También poner los archivos `/__init__.py` necesarios para inicializar como módulo cada carpeta
     
+
+## PyTest
+
+Este tipo hizo todo el curso en PyTest, puedes ver las diferencias. Es más limpio, me habría gustado usar pytest.
+
+https://github.com/JimcostDev/unit-testing
+
+Es la competencia de UnitTest, pero parece que PyTest es mejor, tiene mejores funciones, está más decorada, y tales.
+
+Por ejemplo este test:
+
+```python
+import pytest
+from src.bank_account import BankAccount
+
+@pytest.mark.parametrize("ammount, expected", [
+    (100, 1100),
+    (3000, 4000),
+    (4500, 5500),
+])
+def test_deposit_multiple_ammounts(ammount, expected):
+    account = BankAccount(balance=1000, log_file="transactions.txt")
+    new_balance = account.deposit(ammount)
+    assert new_balance == expected
+```
+
+### Ejecución
+
+Aunque seguramente también tenga suites y tales, aquí correremos un solo código de tests
+
+```bash
+pytest <código>
+```
+
+También tiene la opción verbose. `pytest <código> -v`
+
+### Tutorial simple
+
+1. En la carpeta de pruebas, crea un archivo llamado `test_pytest.py`.
+2. Importa PyTest en tu archivo:
+    
+    ```python
+    import pytest
+    
+    ```
+    
+3. Crea una función de prueba simple como esta:
+    
+    ```python
+    def test_suma():
+        a = 4
+        b = 4
+        assert a + b == 8
+    
+    ```
+    
+4. Ejecuta la prueba con el siguiente comando:
+    
+    ```
+    pytest test_pytest.py
+    
+    ```
+    
+
+PyTest no requiere la creación de clases para agrupar pruebas, lo cual simplifica el código. En este caso, las pruebas se agrupan por archivo.
 
 ## DocTest
 
@@ -640,3 +710,58 @@ class UserTests(unittest.TestCase):
             os.remove(account.log_file)
 
 ```
+
+## Coverage
+
+Pues lo instalas como siempre
+
+Puedes hacer `pip freeze | grep coverage` luego del `pip install coverage`para que te dé la besto versión actual que usaste, para ponerla en requirements.
+
+En windows, parece que eso viene siendo así: `py -m pip freeze > requirements.txt`
+
+Se recomienda tener el proyecto por encima del 80% o 90% del coverage.
+
+### Primera Ejecución
+
+```bash
+coverage run -m unittest discover -s tests
+```
+
+- El problema de la de arriba, es que también le saca cobertura a los tests, y no hacemos tests de los tests. Entonces mejor le pasamos un parámetro para que sepa de dónde sacar el source.
+    
+    ```bash
+    coverage run --source src -m unittest discover -s test
+    ```
+    
+
+### Reporte de cobertura en consola
+
+```bash
+coverage report
+```
+
+Saca algo tipo:
+
+![image.png](attachment:1470db09-e8fd-4f7c-88b1-3f18cc1c0372:image.png)
+
+### Reporte con HTML
+
+```bash
+coverage html
+```
+
+Ahora nos da el reporte en HTML para que podamos ver cada línea del código, cómo es o no cubierta. Se crea una carpeta llamada `/htmlcov` en donde está un index.html al que debemos entrar.
+
+### Settings
+
+Si por ejemplo quieres que salga un error si no se cumple con un mínimo del 90% del coverage, puedes colocarlo en un archivo de configuración
+
+1. Crea un .coveragerc en la raíz del proyecto
+2. Pega esto
+    
+    ```bash
+    [report]
+    fail_under = 90
+    ```
+    
+    Y ya. Esta configuración hará que se muestre un error si tus pruebas no superan el 90% de cobertura

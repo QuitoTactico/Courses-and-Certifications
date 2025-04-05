@@ -11,6 +11,8 @@ localhost:8080
 
 # Troubleshooting
 
+La versión máxima de python es 3.12
+
 Si uno está mal, ver el log con esto:
 docker logs name_of_the_container
 

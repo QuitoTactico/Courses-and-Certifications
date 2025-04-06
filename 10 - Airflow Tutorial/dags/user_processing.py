@@ -14,10 +14,10 @@ from pandas import json_normalize
 from datetime import datetime
 
 # Connections
-'''
+"""
 Connection Id: postgres
 Connection type: postgres
-Host: postgres
+Host: postgres # nombre del servicio en docker
 Database: airflow
 Login: airflow
 Password: airflow
@@ -26,8 +26,7 @@ Port: 5432
 Connection Id: user_api
 Connection type: HTTP
 Host: https://randomuser.me/
-
-'''
+"""
 
 
 # ti = task instance

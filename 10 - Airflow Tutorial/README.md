@@ -1,26 +1,32 @@
 # Run
 
 Correr con esto:
-docker-compose up -d
+```docker-compose up -d```
+
+Correr con flower:
+```docker-compose --profile flower up -d```
 
 Check container health con esto:
-docker-compose ps
+```docker-compose ps```
 
 Puedes ver el resultado en:
-localhost:8080
+```localhost:8080```
+
+Y accedes a flower por:
+```localhost:5555```
 
 # Troubleshooting
 
 La versión máxima de python es 3.12
 
 Si uno está mal, ver el log con esto:
-docker logs name_of_the_container
+```docker logs name_of_the_container```
 
 Luego de arreglar el problema, tumba el compose
-docker-compose down
+```docker-compose down```
 
 Y vuelve a montar con
-docker-compose up -d
+```docker-compose up -d```
 
 # Docker Guide
 

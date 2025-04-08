@@ -3,17 +3,34 @@
 Correr con esto:
 ```docker-compose up -d```
 
-Correr con flower:
-```docker-compose --profile flower up -d```
-
 Check container health con esto:
 ```docker-compose ps```
 
 Puedes ver el resultado en:
 ```localhost:8080```
 
+## Flower y ElasticSearch
+
+Correr con flower:
+```docker-compose --profile flower up -d```
+
 Y accedes a flower por:
 ```localhost:5555```
+
+Correr con elasticsearch:
+```docker-compose -f docker-compose-es.yaml up -d```
+> necesitarás agregar `-f docker-compose-es.yaml` a cada comando que hagas
+
+## Revisar Plugins
+Entra al scheduler y ejecuta `airflow plugins`
+```bash
+docker-compose -f docker-compose-es.yaml ps
+
+docker exec -it <scheduler_container_name> /bin/bash
+
+airflow plugins
+```
+Sales del bash del contenedor con Ctrl+D
 
 # Troubleshooting
 
